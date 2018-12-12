@@ -7,53 +7,53 @@ dynamodb = boto3.resource('dynamodb')
 
 def lambda_handler(event, context):
     # 送られてくるUserIdを取得
-    userId = event["UserId"]
-    cognitoId = event['CognitoId']
+    user_id = event["UserId"]
+    cognito_id = event['CognitoId']
 
     # checkUser
-    if not (util.checkUser(userId, cognitoId)):
+    if not (util.check_user(user_id, cognito_id)):
         return []
 
     # MochiliSharesテーブルよりシェアされているMochiliIdを取得
-    mochiliSharesTable = dynamodb.Table('MochiliShares')
-    mochiliSharesResponse = mochiliSharesTable.query(
+    mochili_shares_table = dynamodb.Table('MochiliShares')
+    mochili_shares_response = mochili_shares_table.query(
         IndexName='UserId-MochiliId-index',
-        KeyConditionExpression=Key('UserId').eq(userId)
+        KeyConditionExpression=Key('UserId').eq(user_id)
     )
 
     # 取得したMochiliIdよりMochiliテーブルから各Mochili情報を取得
-    mochilisTable = dynamodb.Table('Mochilis')
+    mochilis_table = dynamodb.Table('Mochilis')
     mochilis = []
-    for mochiliShare in mochiliSharesResponse['Items']:
-        mochiliId = mochiliShare['MochiliId']
-        mochiliResponse = mochilisTable.get_item(
+    for mochili_share in mochili_shares_response['Items']:
+        mochili_id = mochili_share['MochiliId']
+        mochili_response = mochilis_table.get_item(
             Key={
-                'MochiliId': mochiliId
+                'MochiliId': mochili_id
             }
         )
-        mochili = mochiliResponse['Item']
+        mochili = mochili_response['Item']
 
         # mochiliMembersをMochiliSharesより取得
-        mochiliMembersResponse = mochiliSharesTable.query(
+        mochili_members_response = mochili_shares_table.query(
             KeyConditionExpression=Key('MochiliId').eq(mochili['MochiliId'])
         )
-        returnMochiliMembers = []
-        for mochiliMember in mochiliMembersResponse['Items']:
+        return_mochili_members = []
+        for mochili_member in mochili_members_response['Items']:
             # mochiliIdよりmochiliNameを取得
             # Usersテーブルよりuserを取得
-            usersTable = dynamodb.Table('Users')
-            usersResponse = usersTable.get_item(
+            users_table = dynamodb.Table('Users')
+            users_response = users_table.get_item(
                 Key={
-                    'UserId': mochiliMember['UserId']
+                    'UserId': mochili_member['UserId']
                 }
             )
-            returnMochiliMembers.append({
-                'MemberId': usersResponse['Item']['UserId'],
-                'MemberName': usersResponse['Item']['UserName']
+            return_mochili_members.append({
+                'MemberId': users_response['Item']['UserId'],
+                'MemberName': users_response['Item']['UserName']
             })
 
         # mochilisに追加
-        mochili['MochiliMember'] = returnMochiliMembers
+        mochili['MochiliMember'] = return_mochili_members
         mochilis.append(mochili)
 
     # mochiliの配列であるmochilisを返す

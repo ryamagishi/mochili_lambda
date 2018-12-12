@@ -10,51 +10,51 @@ dynamodb = boto3.resource('dynamodb')
 def lambda_handler(event, context):
     # 送られてくるUserId,mochiliMembers,CognitoIdを取得
     body = event["Body"]
-    createrId = body["CreaterId"]
-    mochiliName = body["MochiliName"]
-    mochiliMembers = body["MochiliMembers"]
-    cognitoId = event["CognitoId"]
-    createdAt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    updatedAt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    mochiliId = createrId + "--" + createdAt
+    creater_id = body["CreaterId"]
+    mochili_name = body["MochiliName"]
+    mochili_members = body["MochiliMembers"]
+    cognito_id = event["CognitoId"]
+    created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    updated_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    mochili_id = creater_id + "--" + created_at
 
     result = {}
 
     # checkUser
-    if not (util.checkUser(createrId, cognitoId)):
+    if not (util.check_user(creater_id, cognito_id)):
         return {}
 
     try:
         # mochiliを登録
-        mochilisTable = dynamodb.Table('Mochilis')
-        mochilisTable.put_item(
+        mochilis_table = dynamodb.Table('Mochilis')
+        mochilis_table.put_item(
             Item={
-                "MochiliId": mochiliId,
-                "MochiliName": mochiliName,
-                "CreaterId": createrId,
-                "UpdaterId": createrId,
-                "CreatedAt": createdAt,
-                "UpdatedAt": updatedAt
+                "MochiliId": mochili_id,
+                "MochiliName": mochili_name,
+                "CreaterId": creater_id,
+                "UpdaterId": creater_id,
+                "CreatedAt": created_at,
+                "UpdatedAt": updated_at
             },
             ConditionExpression=
             'attribute_not_exists(MochiliId)'
         )
 
         # mochiliSharesを登録
-        mochiliSharesTable = dynamodb.Table('MochiliShares')
-        for mochiliMemberId in mochiliMembers:
-            mochiliSharesTable.put_item(
+        mochili_shares_table = dynamodb.Table('MochiliShares')
+        for mochili_member_id in mochili_members:
+            mochili_shares_table.put_item(
                 Item={
-                    "MochiliId": mochiliId,
-                    "UserId": mochiliMemberId,
-                    "CreatedAt": createdAt
+                    "MochiliId": mochili_id,
+                    "UserId": mochili_member_id,
+                    "CreatedAt": created_at
                 },
                 ConditionExpression=
                 'attribute_not_exists(MochiliId) AND attribute_not_exists(UserId)'
             )
 
         result = {"Status": "OK",
-                  "Detail": mochiliId}
+                  "Detail": mochili_id}
     except ClientError as clientError:
         result = {"Status": clientError.response['Error']['Code'],
                   "Detail": str(clientError)}

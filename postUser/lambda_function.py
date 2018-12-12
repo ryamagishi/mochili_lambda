@@ -9,25 +9,25 @@ dynamodb = boto3.resource('dynamodb')
 def lambda_handler(event, context):
     # 送られてくるUserId,UserName,CognitoIdを取得
     body = event["Body"]
-    userId = body["UserId"]
-    userName = body["UserName"]
-    cognitoId = event["CognitoId"]
+    user_id = body["UserId"]
+    user_name = body["UserName"]
+    cognito_id = event["CognitoId"]
     password = body["Password"]
-    createdAt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    updatedAt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    updated_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     # Usersテーブルにuserを登録
     result = {}
     try:
-        usersTable = dynamodb.Table('Users')
-        usersTable.put_item(
+        users_table = dynamodb.Table('Users')
+        users_table.put_item(
             Item={
-                "UserId": userId,
-                "UserName": userName,
-                "CognitoId": cognitoId,
+                "UserId": user_id,
+                "UserName": user_name,
+                "CognitoId": cognito_id,
                 "Password": password,
-                "CreatedAt": createdAt,
-                "UpdatedAt": updatedAt
+                "CreatedAt": created_at,
+                "UpdatedAt": updated_at
             },
             ConditionExpression='attribute_not_exists(UserId)'
         )

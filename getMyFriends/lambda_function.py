@@ -7,35 +7,32 @@ dynamodb = boto3.resource('dynamodb')
 
 def lambda_handler(event, context):
     # 送られてくるUserId, CognitoIdを取得
-    userId = event['UserId']
-    cognitoId = event['CognitoId']
+    user_id = event['UserId']
+    cognito_id = event['CognitoId']
 
     # checkUser
-    if not (util.checkUser(userId, cognitoId)):
+    if not (util.check_user(user_id, cognito_id)):
         return []
 
     # Friendsテーブルより友達のUserIdであるFriendIdを取得
-    friendsTable = dynamodb.Table('Friends')
-    friendsResponse = friendsTable.query(
-        KeyConditionExpression=Key('UserId').eq(userId)
+    friends_table = dynamodb.Table('Friends')
+    friends_response = friends_table.query(
+        KeyConditionExpression=Key('UserId').eq(user_id)
     )
 
     # 取得したFriendIdよりUserテーブルから各User情報を取得
-    usersTable = dynamodb.Table('Users')
+    users_table = dynamodb.Table('Users')
     friends = []
-    for friendItem in friendsResponse['Items']:
-        friendId = friendItem['FriendId']
-        userResponse = usersTable.get_item(
+    for friend_item in friends_response['Items']:
+        friend_id = friend_item['FriendId']
+        user_response = users_table.get_item(
             Key={
-                'UserId': friendId
+                'UserId': friend_id
             }
         )
         # friendsのcreatedAt,updatedAtはFriendsテーブルデータより設定
-        friend = {}
-        friend['FriendId'] = userResponse['Item']['UserId']
-        friend['FriendName'] = userResponse['Item']['UserName']
-        friend['CreatedAt'] = friendItem['CreatedAt']
-        friend['UpdatedAt'] = friendItem['UpdatedAt']
+        friend = {'FriendId': user_response['Item']['UserId'], 'FriendName': user_response['Item']['UserName'],
+                  'CreatedAt': friend_item['CreatedAt'], 'UpdatedAt': friend_item['UpdatedAt']}
         friends.append(friend)
 
     # userの配列であるfriendsを返す

@@ -10,27 +10,27 @@ dynamodb = boto3.resource('dynamodb')
 def lambda_handler(event, context):
     # 送られてくるUserId,FriendId,CognitoIdを取得
     body = event["Body"]
-    userId = body["UserId"]
-    friendId = body["FriendId"]
-    cognitoId = event["CognitoId"]
-    createdAt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    updatedAt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    user_id = body["UserId"]
+    friend_id = body["FriendId"]
+    cognito_id = event["CognitoId"]
+    created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    updated_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     # Friendsテーブルにfriendを登録
     result = {}
 
     # checkUser
-    if not (util.checkUser(userId, cognitoId)):
+    if not (util.check_user(user_id, cognito_id)):
         return {}
 
     try:
-        friendsTable = dynamodb.Table('Friends')
-        friendsTable.put_item(
+        friends_table = dynamodb.Table('Friends')
+        friends_table.put_item(
             Item={
-                "UserId": userId,
-                "FriendId": friendId,
-                "CreatedAt": createdAt,
-                "UpdatedAt": updatedAt
+                "UserId": user_id,
+                "FriendId": friend_id,
+                "CreatedAt": created_at,
+                "UpdatedAt": updated_at
             },
             ConditionExpression=
             'attribute_not_exists(UserId) AND attribute_not_exists(FriendId)'
